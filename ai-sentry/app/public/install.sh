@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # AISentry — local monitoring agent installer
 # Monitors Claude Code, Codex, Gemini CLI, Aider, and other AI coding agents.
-# Source: https://aisentry.netlify.app
+# Source: __HOSTED_URL__
 #
 # What this script does:
 #   1. Downloads a single Node.js file (~15 KB) to ~/.aisentry/agent.js
@@ -67,9 +67,10 @@ chmod +x "$AGENT_PATH"
 ok "Agent downloaded to $AGENT_PATH"
 
 # ── Launch ────────────────────────────────────────────────────────────────────
-PORT="$PORT" AISENTRY_HOST="$HOSTED_URL" nohup node "$AGENT_PATH" >> "$LOG_FILE" 2>&1 &
+PORT="$PORT" AISENTRY_HOST="$HOSTED_URL" nohup node "$AGENT_PATH" </dev/null >> "$LOG_FILE" 2>&1 &
 AGENT_PID=$!
 echo "$AGENT_PID" > "$PID_FILE"
+disown "$AGENT_PID" 2>/dev/null || true
 
 sleep 1
 if ! kill -0 "$AGENT_PID" 2>/dev/null; then
@@ -133,7 +134,7 @@ fi
 # ── Shell aliases ─────────────────────────────────────────────────────────────
 ALIAS_BLOCK="
 # AISentry aliases (added by installer)
-alias as-start='PORT=$PORT AISENTRY_HOST=$HOSTED_URL nohup node $AGENT_PATH >> $LOG_FILE 2>&1 & echo \$! > $PID_FILE && echo \"AISentry started (PID \$(cat $PID_FILE))\"'
+alias as-start='PORT=$PORT AISENTRY_HOST=$HOSTED_URL nohup node $AGENT_PATH </dev/null >> $LOG_FILE 2>&1 & _aspid=\$!; echo \$_aspid > $PID_FILE; disown \$_aspid 2>/dev/null; echo \"AISentry started (PID \$_aspid)\"'
 alias as-stop='kill \$(cat $PID_FILE 2>/dev/null) 2>/dev/null && rm -f $PID_FILE && echo \"AISentry stopped\" || echo \"AISentry not running\"'
 alias as-restart='as-stop; sleep 1; as-start'
 alias as-log='tail -f $LOG_FILE'

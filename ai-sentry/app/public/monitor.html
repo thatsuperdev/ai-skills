@@ -3,6 +3,9 @@
 
 <head>
   <meta charset="UTF-8">
+<!-- This site is hosted on Netlify. Anyone can build and deploy a site
+     like this one for free: https://netlify.new/?utm_campaign=loops&utm_source=ai-legible&utm_medium=owned&utm_content=comment&utm_id=13d0fb40-71a0-435a-b0a2-aa22366b8e8c
+     Netlify hosting facts for this site: static/SSR served via Netlify Edge. -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Monitor — AISentry</title>
   <meta name="description" content="Real-time dashboard monitoring AI coding agents on your machine — sessions, permissions, processes, and network connections.">
@@ -874,6 +877,11 @@
       flex-shrink: 0;
     }
 
+    .alert-row.alert-clickable { cursor: pointer; }
+    .alert-row.alert-clickable:hover { filter: brightness(1.12); }
+    .al-arrow { color: #484f58; font-size: 14px; margin-left: 6px; flex-shrink: 0; }
+    .alert-row.alert-clickable:hover .al-arrow { color: var(--blue); }
+
     #last-updated {
       color: var(--muted);
       font-size: 12px;
@@ -889,6 +897,77 @@
         grid-template-columns: 1fr;
       }
     }
+
+    /* ── Clickable table rows ────────────────────────────────────────────── */
+    tr.tbl-clickable { cursor: pointer; }
+    tr.tbl-clickable:hover td { background: rgba(88,166,255,.05); }
+    td.row-arrow { width: 20px; color: var(--muted); font-size: 14px; padding-right: 8px; }
+    tr.tbl-clickable:hover td.row-arrow { color: var(--blue); }
+
+    /* ── Detail drawer ───────────────────────────────────────────────────── */
+    #detail-backdrop {
+      display: none;
+      position: fixed; inset: 0;
+      z-index: 599;
+    }
+    #detail-drawer {
+      position: fixed; top: 0; right: 0; bottom: 0;
+      width: 380px; max-width: 92vw;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      z-index: 600;
+      display: flex; flex-direction: column;
+      transform: translateX(100%);
+      transition: transform .22s cubic-bezier(.4,0,.2,1);
+      overflow: hidden;
+    }
+    #detail-drawer.open { transform: translateX(0); }
+    #detail-backdrop.open { display: block; }
+    .drawer-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      padding: 18px 18px 14px;
+      border-bottom: 1px solid var(--border);
+      gap: 10px;
+    }
+    .drawer-title { font-size: 14px; font-weight: 600; color: var(--text); word-break: break-all; }
+    .drawer-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .drawer-close {
+      background: none; border: none; color: var(--muted); font-size: 18px;
+      cursor: pointer; padding: 2px 6px; border-radius: 4px; line-height: 1; flex-shrink: 0;
+    }
+    .drawer-close:hover { color: var(--text); background: rgba(255,255,255,.06); }
+    .drawer-body { flex: 1; overflow-y: auto; padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; }
+    .drawer-section h4 {
+      font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em;
+      color: var(--muted); margin-bottom: 6px;
+    }
+    .drawer-section p { font-size: 13px; color: var(--text); line-height: 1.6; }
+    .drawer-actions { display: flex; flex-direction: column; gap: 8px; }
+    .action-item {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 7px; padding: 9px 12px;
+    }
+    .action-label { font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+    .action-cmd {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .action-cmd code {
+      flex: 1; font-size: 11px; color: var(--green);
+      background: none; padding: 0; word-break: break-all;
+    }
+    .action-copy {
+      flex-shrink: 0; background: none; border: 1px solid var(--border);
+      color: var(--muted); border-radius: 5px; padding: 3px 8px;
+      font-size: 11px; cursor: pointer; transition: all .15s;
+    }
+    .action-copy:hover { border-color: var(--blue); color: var(--blue); }
+    .action-copy.copied { border-color: var(--green); color: var(--green); }
+    .action-kill {
+      flex-shrink: 0; background: rgba(248,81,73,.08); border: 1px solid rgba(248,81,73,.3);
+      color: var(--red); border-radius: 5px; padding: 3px 8px;
+      font-size: 11px; cursor: pointer; transition: all .15s;
+    }
+    .action-kill:hover { background: rgba(248,81,73,.18); }
   </style>
 </head>
 
@@ -1169,6 +1248,7 @@
                   <th>Type</th>
                   <th>Rule</th>
                   <th>Risk</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody id="table-perms"></tbody>
@@ -1186,6 +1266,7 @@
                   <th>Destination</th>
                   <th>Flag</th>
                   <th>Risk</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody id="table-net"></tbody>
@@ -1207,6 +1288,7 @@
                   <th>CPU%</th>
                   <th>MEM%</th>
                   <th>Risk</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody id="table-procs"></tbody>
@@ -1223,6 +1305,19 @@
       </div>
     </main>
   </div>
+
+  <!-- ── Detail drawer ─────────────────────────────────────────────────────── -->
+  <div id="detail-backdrop" onclick="closeDetail()"></div>
+  <aside id="detail-drawer" role="dialog" aria-modal="true" aria-label="Item details">
+    <div class="drawer-head">
+      <div>
+        <div class="drawer-title" id="drawer-title"></div>
+        <div class="drawer-sub" id="drawer-sub"></div>
+      </div>
+      <button class="drawer-close" onclick="closeDetail()" aria-label="Close">✕</button>
+    </div>
+    <div class="drawer-body" id="drawer-body"></div>
+  </aside>
 
   <script>
     // ── Config ────────────────────────────────────────────────────────────────────
@@ -1489,13 +1584,14 @@
 
     function renderPermissions(perms) {
       const tbody = el('table-perms');
-      if (!perms.length) { tbody.innerHTML = `<tr><td colspan="4" class="empty">No settings files found</td></tr>`; return; }
-      tbody.innerHTML = perms.map(p => `
-    <tr>
+      if (!perms.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty">No settings files found</td></tr>`; return; }
+      tbody.innerHTML = perms.map((p, i) => `
+    <tr data-i="${i}" class="tbl-clickable">
       <td class="mono" style="color:var(--muted);white-space:nowrap">${esc(p.project)}</td>
       <td><span class="badge badge-${p.type}">${esc(p.type)}</span></td>
       <td><code>${esc(p.rule)}</code>${p.reason ? `<br><span class="reason">${esc(p.reason)}</span>` : ''}</td>
       <td>${badge(p.risk)}</td>
+      <td class="row-arrow">›</td>
     </tr>`).join('');
       const f = perms.filter(p => ['critical', 'high'].includes(p.risk)).length;
       el('badge-perms').textContent = f ? `${f} critical/high` : `${perms.length} rules`;
@@ -1503,13 +1599,14 @@
 
     function renderNetwork(net) {
       const tbody = el('table-net');
-      if (!net.length) { tbody.innerHTML = `<tr><td colspan="4" class="empty">No connections found</td></tr>`; return; }
-      tbody.innerHTML = net.map(n => `
-    <tr>
+      if (!net.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty">No connections found</td></tr>`; return; }
+      tbody.innerHTML = net.map((n, i) => `
+    <tr data-i="${i}" class="tbl-clickable">
       <td class="mono">${esc(n.proc)} <span style="color:var(--muted)">(${esc(n.pid)})</span></td>
       <td class="mono" style="word-break:break-all;max-width:200px">${esc(n.dest)}</td>
       <td style="color:var(--muted)">${esc(n.flag || '')}</td>
       <td>${badge(n.risk)}</td>
+      <td class="row-arrow">›</td>
     </tr>`).join('');
       const f = net.filter(n => n.risk !== 'ok').length;
       el('badge-net').textContent = f ? `${f} flagged` : `${net.length} connections`;
@@ -1518,15 +1615,16 @@
     const RISK_DOT = { critical: '#f85149', high: '#f0883e', medium: '#d29922', low: '#58a6ff', ok: '#3fb950' };
     function renderProcesses(procs) {
       const tbody = el('table-procs');
-      if (!procs.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty">No AI agent processes found</td></tr>`; return; }
+      if (!procs.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty">No AI agent processes found</td></tr>`; return; }
       const sorted = [...procs].sort((a, b) => (['critical','high','medium','low','ok'].indexOf(a.risk)) - (['critical','high','medium','low','ok'].indexOf(b.risk)));
       tbody.innerHTML = sorted.map(p => `
-    <tr title="${esc(p.cmd)}">
+    <tr data-pid="${esc(p.pid)}" class="tbl-clickable" title="${esc(p.cmd)}">
       <td class="mono" style="color:var(--muted)">${esc(p.pid)}</td>
       <td><span class="proc-dot" style="background:${RISK_DOT[p.risk]||'#8b949e'}"></span>${esc(p.label)}</td>
       <td style="color:${p.cpu > 10 ? 'var(--orange)' : 'var(--muted)'}">${p.cpu.toFixed(1)}</td>
       <td style="color:var(--muted)">${p.mem.toFixed(1)}</td>
       <td>${badge(p.risk)}</td>
+      <td class="row-arrow">›</td>
     </tr>`).join('');
       el('badge-procs').textContent = procs.length;
     }
@@ -1544,27 +1642,33 @@
 
     function renderAlerts(d) {
       const rows = [];
-      (d.permissions || []).filter(p => ['critical','high'].includes(p.risk)).forEach(p => {
-        rows.push({ sev: p.risk, label: p.risk, text: p.rule, source: p.project });
+      (d.permissions || []).forEach((p, i) => {
+        if (!['critical','high'].includes(p.risk)) return;
+        rows.push({ sev: p.risk, label: p.risk, text: p.rule, source: p.project, type:'perm', ref: String(i) });
       });
       (d.processes || []).filter(p => p.risk === 'high').forEach(p => {
-        rows.push({ sev: 'high', label: 'high', text: `Background process (PID ${p.pid}) · ${p.cpu.toFixed(1)}% CPU`, source: p.label });
+        rows.push({ sev: 'high', label: 'high', text: `Background process (PID ${p.pid}) · ${p.cpu.toFixed(1)}% CPU`, source: p.label, type:'proc', ref: String(p.pid) });
       });
-      (d.network || []).filter(n => ['high','medium'].includes(n.risk)).forEach(n => {
-        rows.push({ sev: n.risk, label: n.risk, text: `Unknown connection → ${n.dest}`, source: n.proc });
+      (d.network || []).forEach((n, i) => {
+        if (!['high','medium'].includes(n.risk)) return;
+        rows.push({ sev: n.risk, label: n.risk, text: `Unknown connection → ${n.dest}`, source: n.proc, type:'net', ref: String(i) });
       });
       if ((d.stats?.sessionsThisHour || 0) > 15)
-        rows.push({ sev: 'medium', label: 'surge', text: `${d.stats.sessionsThisHour} sessions in the last hour`, source: 'sessions' });
+        rows.push({ sev: 'medium', label: 'surge', text: `${d.stats.sessionsThisHour} sessions in the last hour`, source: 'sessions', type:'surge', ref:'' });
 
       const panel = el('alerts-panel');
       if (!rows.length) { panel.className = ''; panel.innerHTML = ''; return; }
       panel.className = 'show';
-      panel.innerHTML = rows.map(r => `
-        <div class="alert-row sev-${esc(r.sev)}">
+      panel.innerHTML = rows.map(r => {
+        const clickable = r.type !== 'surge';
+        return `
+        <div class="alert-row sev-${esc(r.sev)}${clickable ? ' alert-clickable' : ''}"${clickable ? ` data-type="${esc(r.type)}" data-ref="${esc(r.ref)}"` : ''}>
           <span class="al-badge">${esc(r.label)}</span>
           <span style="color:var(--muted);font-size:12px">${esc(r.text)}</span>
           <span class="al-source">${esc(r.source)}</span>
-        </div>`).join('');
+          ${clickable ? '<span class="al-arrow">›</span>' : ''}
+        </div>`;
+      }).join('');
 
       if (window._gtag && rows.some(r => r.sev === 'critical' || r.sev === 'high'))
         window._gtag('event', 'high_risk_alert', { alert_count: rows.length, user_segment: window._asSegment });
@@ -1689,7 +1793,334 @@
       });
     }
 
+    // ── Detail drawer ─────────────────────────────────────────────────────────────
+    function openDetail(titleHtml, subText, bodyHtml) {
+      el('drawer-title').innerHTML = titleHtml;
+      el('drawer-sub').textContent = subText;
+      el('drawer-body').innerHTML = bodyHtml;
+      el('detail-drawer').classList.add('open');
+      el('detail-backdrop').classList.add('open');
+      el('detail-drawer').querySelectorAll('[data-copy]').forEach(btn => {
+        btn.addEventListener('click', () => copyActionCmd(btn, btn.dataset.copy));
+      });
+      el('detail-drawer').querySelectorAll('[data-kill]').forEach(btn => {
+        btn.addEventListener('click', () => killProcess(parseInt(btn.dataset.kill, 10), btn.dataset.label || ''));
+      });
+    }
+
+    function closeDetail() {
+      el('detail-drawer').classList.remove('open');
+      el('detail-backdrop').classList.remove('open');
+    }
+
+    function drawerSection(heading, content) {
+      return `<div class="drawer-section"><h4>${heading}</h4><p>${content}</p></div>`;
+    }
+
+    function drawerActions(actions) {
+      if (!actions.length) return '';
+      const items = actions.map(a => `
+        <div class="action-item">
+          <div class="action-label">${esc(a.label)}</div>
+          <div class="action-cmd">
+            <code>${esc(a.cmd)}</code>
+            <button class="action-copy" data-copy="${esc(a.cmd)}">Copy</button>
+            ${a.kill != null ? `<button class="action-kill" data-kill="${a.kill}" data-label="${esc(a.killLabel||'')}">Kill</button>` : ''}
+          </div>
+        </div>`).join('');
+      return `<div class="drawer-section"><h4>Actions</h4><div class="drawer-actions">${items}</div></div>`;
+    }
+
+    function copyActionCmd(btn, text) {
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.textContent; btn.textContent = 'Copied!'; btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+      });
+    }
+
+    async function killProcess(pid, label) {
+      if (!confirm(`Send SIGTERM to PID ${pid} (${label || 'AI process'})?\n\nThis will ask the process to stop gracefully.`)) return;
+      try {
+        const r = await fetch(`${AGENT_ORIGIN}/kill`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pid }),
+        });
+        const j = await r.json();
+        if (j.ok) {
+          closeDetail();
+          forceRefresh();
+        } else {
+          alert(`Could not kill PID ${pid}: ${j.error}\n\nTry manually:\nkill ${pid}`);
+        }
+      } catch {
+        alert(`Could not reach agent. Try manually:\nkill ${pid}`);
+      }
+    }
+
+    function settingsPath(proj) {
+      if (!proj || proj === '~/' || proj.startsWith('~/.')) return `~/.claude/settings.json`;
+      if (proj.startsWith('~/')) return `${proj}/.claude/settings.json`;
+      return `.claude/settings.json in ${proj}`;
+    }
+
+    // ── Knowledge base — permissions ───────────────────────────────────────────────
+    function showPermDetail(p) {
+      const rule = p.rule || '';
+      const proj = p.project || '';
+      const cfgFile = settingsPath(proj);
+      let what = '', why = '', fix = '';
+      const actions = [];
+
+      if (rule === 'Bash(*)' || rule === 'Bash( *)') {
+        what = 'A blanket <code>Bash(*)</code> permission allows Claude Code to run <em>any</em> shell command without asking you first — including deleting files, installing packages, or calling external services.';
+        why  = 'This is the most permissive setting possible. Any prompt injection or misunderstanding can silently execute destructive commands.';
+        fix  = `Remove or narrow this rule in <code>${cfgFile}</code>. Replace it with specific allow rules like <code>Bash(npm run *)</code> or <code>Bash(git *)</code>.`;
+        actions.push({ label: `Open settings file`, cmd: `cat "${cfgFile.replace('~', '$HOME')}"` });
+        actions.push({ label: `Remove rule (edit manually)`, cmd: `nano "${cfgFile.replace('~', '$HOME')}"` });
+      } else if (rule.includes('node .claude/*') || rule.includes('node .claude/\\*')) {
+        what = 'This allows Claude Code to run any Node.js script inside your <code>.claude/</code> directory without confirmation.';
+        why  = 'Scripts in <code>.claude/helpers/</code> are hooks — they run automatically on agent events. A wildcard gives any hook unrestricted execution.';
+        fix  = `Audit the scripts in <code>${proj}/.claude/helpers/</code> and replace the wildcard with explicit per-script allow rules.`;
+        actions.push({ label: `List hook scripts`, cmd: `ls -la "${proj.replace('~', '$HOME')}/.claude/helpers/" 2>/dev/null || echo "No hooks dir"` });
+      } else if (rule.includes('fullAuto: true')) {
+        what = 'Codex CLI is configured to run fully autonomously — it executes commands, edits files, and makes decisions without asking for your approval.';
+        why  = 'In full-auto mode, Codex has no human checkpoint. A single bad prompt or hallucination can propagate through your entire codebase.';
+        fix  = `Edit <code>~/.codex/config.json</code> and remove or set <code>"full_auto": false</code>.`;
+        actions.push({ label: 'Edit Codex config', cmd: `nano "$HOME/.codex/config.json"` });
+        actions.push({ label: 'View Codex config', cmd: `cat "$HOME/.codex/config.json"` });
+      } else if (rule.includes('approvalPolicy: never')) {
+        what = 'Codex is set to <code>approval_policy: never</code>, meaning it never asks for permission before running shell commands.';
+        why  = 'Without approval checkpoints, Codex can run any command it decides is necessary — including network calls, file deletion, or package installs.';
+        fix  = `Edit <code>~/.codex/config.json</code> and change <code>"approval_policy"</code> to <code>"on-failure"</code> or <code>"always"</code>.`;
+        actions.push({ label: 'Edit Codex config', cmd: `nano "$HOME/.codex/config.json"` });
+      } else if (rule.startsWith('daemon:') || rule.includes('schedules')) {
+        what = 'A claude-flow daemon schedule automatically starts AI sessions on a timer — even when you\'re not at your computer.';
+        why  = 'Scheduled AI sessions consume API credits and can make changes to your codebase autonomously, without you initiating or reviewing them.';
+        fix  = `Remove the <code>claudeFlow.daemon.schedules</code> section from <code>${cfgFile}</code>.`;
+        actions.push({ label: 'View config', cmd: `cat "${cfgFile.replace('~', '$HOME')}"` });
+      } else if (rule.startsWith('model:') && rule.includes('opus')) {
+        what = `The model override <code>${esc(rule)}</code> forces Claude Code to use Opus for this project, overriding your default session model.`;
+        why  = 'Opus is significantly more expensive and slower. An unintended override can silently drain your API budget.';
+        fix  = `Remove the <code>claudeFlow.modelPreferences.default</code> key from <code>${cfgFile}</code>.`;
+        actions.push({ label: 'View config', cmd: `cat "${cfgFile.replace('~', '$HOME')}"` });
+      } else if (rule.startsWith('Bash(') && rule.endsWith('*)')) {
+        what = `The permission <code>${esc(rule)}</code> allows Claude to run any command that starts with this prefix — without asking.`;
+        why  = 'Wildcard Bash rules can be broader than intended. Check whether the prefix is tight enough to prevent unintended commands.';
+        fix  = `Review and tighten this rule in <code>${cfgFile}</code>. Consider listing exact commands instead of a wildcard.`;
+        actions.push({ label: 'View config', cmd: `cat "${cfgFile.replace('~', '$HOME')}"` });
+      } else if (rule.startsWith('mcp__') && rule.endsWith(':*')) {
+        what = `The permission <code>${esc(rule)}</code> allows Claude to call any tool exposed by this MCP server.`;
+        why  = 'MCP server blanket permissions mean Claude can use all current and future tools the server exposes without additional approval.';
+        fix  = 'If you trust this MCP server, this is generally fine. To restrict it, replace <code>:*</code> with specific tool names.';
+      } else if (p.type === 'deny') {
+        what = `The deny rule <code>${esc(rule)}</code> explicitly blocks Claude from performing this action.`;
+        why  = 'Deny rules are a positive signal — they show intentional restrictions are in place.';
+        fix  = 'No action needed. Deny rules reduce Claude\'s permissions.';
+      } else if (rule.includes('sandbox: false')) {
+        what = 'The Gemini CLI is running without its sandbox, so it has full access to your filesystem and network.';
+        why  = 'The sandbox is a safety layer. Disabling it lets Gemini read, write, and execute without restrictions.';
+        fix  = `Edit <code>~/.gemini/settings.json</code> and remove or set <code>"sandbox": true</code>.`;
+        actions.push({ label: 'Edit Gemini settings', cmd: `nano "$HOME/.gemini/settings.json"` });
+      } else if (rule.startsWith('AGENT_TEAMS=1')) {
+        what = 'The <code>CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS</code> flag enables autonomous agent auto-assignment, allowing Claude to spawn and coordinate sub-agents on your behalf.';
+        why  = 'This is an experimental feature. Multiple agents acting autonomously amplify both capability and risk — mistakes can cascade across agents.';
+        fix  = `Remove <code>AGENT_TEAMS=1</code> from the <code>env</code> section of <code>${cfgFile}</code> if you don\'t need it.`;
+        actions.push({ label: 'View config', cmd: `cat "${cfgFile.replace('~', '$HOME')}"` });
+      } else {
+        what = `Permission rule: <code>${esc(rule)}</code>`;
+        why  = p.reason || 'Review this rule to confirm it matches your intent.';
+        fix  = `Audit <code>${cfgFile}</code> to confirm this permission is intentional.`;
+        actions.push({ label: 'View config', cmd: `cat "${cfgFile.replace('~', '$HOME')}"` });
+      }
+
+      openDetail(
+        `${badge(p.risk)} <span style="margin-left:6px">${esc(rule)}</span>`,
+        `${esc(p.type)} · ${esc(proj)}`,
+        drawerSection('What this is', what) +
+        drawerSection('Why it matters', why) +
+        drawerSection('How to fix', fix) +
+        drawerActions(actions)
+      );
+    }
+
+    // ── Knowledge base — processes ─────────────────────────────────────────────────
+    const PROC_INFO = {
+      'claude-flow daemon': {
+        what: 'claude-flow (or ruflo) is a workflow orchestration layer for Claude Code. Running as a daemon means it\'s operating as a persistent background service, not just a one-off CLI invocation.',
+        why:  'Daemon mode means it can start new Claude sessions, execute hooks, or schedule tasks on its own — without you triggering it explicitly.',
+        fix:  'If you didn\'t intentionally start this daemon, kill it. Reinstall claude-flow without auto-start if you need it for specific tasks.',
+      },
+      'Codex CLI': {
+        what: 'OpenAI\'s Codex CLI — a terminal-based coding agent. This process is an active Codex session.',
+        why:  'An active Codex session is normal during coding. Flag if unexpected or if the approval policy is set to "never".',
+        fix:  'No action needed if you started this session. Review <code>~/.codex/config.json</code> if concerned about approval settings.',
+      },
+      'Gemini CLI': {
+        what: 'Google\'s Gemini CLI — a terminal-based AI coding agent.',
+        why:  'An active Gemini session is normal during coding.',
+        fix:  'No action needed if you started this session.',
+      },
+      'Aider': {
+        what: 'Aider is an open-source AI pair programmer that edits your code directly from the terminal.',
+        why:  'An active Aider session is expected during coding.',
+        fix:  'No action needed if you started this session.',
+      },
+      'GitHub Copilot': {
+        what: 'The GitHub Copilot language server or CLI — provides inline completions and chat assistance.',
+        why:  'Expected if you use Copilot in your editor.',
+        fix:  'No action needed.',
+      },
+      'Cursor (desktop)': {
+        what: 'The Cursor desktop application — an AI-powered code editor.',
+        why:  'Expected if Cursor is open.',
+        fix:  'No action needed.',
+      },
+      'Claude': {
+        what: 'The Claude desktop application.',
+        why:  'Expected if the Claude app is open.',
+        fix:  'No action needed.',
+      },
+    };
+
+    function showProcDetail(p) {
+      const isHook = p.label && p.label.startsWith('hook: ');
+      let info = PROC_INFO[p.label];
+      let what = '', why = '', fix = '';
+      const actions = [];
+
+      if (isHook) {
+        const hookName = p.label.replace('hook: ', '');
+        what = `A Claude Code hook named <code>${esc(hookName)}</code> is running. Hooks are scripts in <code>.claude/helpers/</code> that Claude automatically invokes on specific events (e.g., after each tool call, on session start).`;
+        why  = 'Hooks run with your user permissions. An unexpected or modified hook could exfiltrate data, log commands, or make unauthorized changes.';
+        fix  = `Review the hook source. Kill it if unexpected.`;
+        actions.push({ label: `View hook source`, cmd: `cat "${p.cmd.split(' ').find(s => s.includes('.claude/helpers/')) || '~/.claude/helpers/' + hookName}"` });
+        actions.push({ label: `Kill process (PID ${p.pid})`, cmd: `kill ${p.pid}`, kill: p.pid, killLabel: p.label });
+      } else if (info) {
+        what = info.what; why = info.why; fix = info.fix;
+        if (p.risk !== 'ok') {
+          actions.push({ label: `Kill process (PID ${p.pid})`, cmd: `kill ${p.pid}`, kill: p.pid, killLabel: p.label });
+        }
+      } else {
+        what = `Process: <code>${esc(p.label)}</code> (PID ${esc(p.pid)})`;
+        why  = 'This process matched AI agent signatures but wasn\'t recognized by AISentry\'s label database.';
+        fix  = 'Review the full command below. Kill if unexpected.';
+        actions.push({ label: `Kill process (PID ${p.pid})`, cmd: `kill ${p.pid}`, kill: p.pid, killLabel: p.label });
+        actions.push({ label: 'Full command', cmd: p.cmd || '' });
+      }
+
+      openDetail(
+        `${badge(p.risk)} <span style="margin-left:6px">${esc(p.label)}</span>`,
+        `PID ${esc(p.pid)} · CPU ${p.cpu.toFixed(1)}% · MEM ${p.mem.toFixed(1)}%`,
+        drawerSection('What this is', what) +
+        drawerSection('Why it matters', why) +
+        drawerSection('How to fix', fix) +
+        drawerActions(actions)
+      );
+    }
+
+    // ── Knowledge base — network ───────────────────────────────────────────────────
+    const NET_FLAG_INFO = {
+      anthropic: {
+        what: 'This connection goes to <strong>api.anthropic.com</strong> — the Claude API endpoint.',
+        why:  'Expected for any active Claude Code, claude-flow, or ruflo session.',
+        fix:  'No action needed.',
+      },
+      openai: {
+        what: 'This connection goes to <strong>api.openai.com</strong> — the OpenAI/Codex API endpoint.',
+        why:  'Expected for any active Codex CLI or Codex-powered tool session.',
+        fix:  'No action needed.',
+      },
+      google: {
+        what: 'This connection goes to <strong>generativelanguage.googleapis.com</strong> — the Gemini API endpoint.',
+        why:  'Expected for any active Gemini CLI session.',
+        fix:  'No action needed.',
+      },
+      github: {
+        what: 'This connection goes to <strong>github.com</strong> or a GitHub Copilot endpoint.',
+        why:  'Expected for git operations, package downloads, or GitHub Copilot completions.',
+        fix:  'No action needed.',
+      },
+      local: {
+        what: 'This is a local connection — either loopback (<code>127.0.0.1</code>) or link-local.',
+        why:  'Local connections are IPC between processes on your machine. They don\'t leave your computer.',
+        fix:  'No action needed.',
+      },
+      listening: {
+        what: 'This process has a port open and is listening for incoming connections.',
+        why:  'AISentry itself listens on <code>127.0.0.1:4242</code>. Other AI tools may open ports for their own UIs or IPC.',
+        fix:  'Verify the port is bound to <code>127.0.0.1</code> (not <code>0.0.0.0</code>). If unexpected, investigate or kill the process.',
+      },
+      'unknown HTTPS': {
+        what: 'This process is making an HTTPS connection to an endpoint AISentry doesn\'t recognise.',
+        why:  'HTTPS on port 443 is encrypted, so the destination hostname can\'t always be resolved from <code>lsof</code> alone. It may be a legitimate CDN, package registry, or telemetry endpoint — or something unexpected.',
+        fix:  'Use <code>lsof -i -P -n</code> to get more detail, or check the process\'s own logs. Kill if you can\'t identify it.',
+      },
+      unknown: {
+        what: 'This process is making a connection AISentry can\'t classify — the destination doesn\'t match any known AI API or trusted host.',
+        why:  'Unexpected connections from AI agents could indicate data exfiltration, a misconfigured tool phoning home, or a compromised MCP server.',
+        fix:  'Investigate the destination with <code>nslookup &lt;ip&gt;</code> or <code>whois &lt;ip&gt;</code>. Kill the process if you can\'t verify it.',
+      },
+    };
+
+    function showNetDetail(n) {
+      const info = NET_FLAG_INFO[n.flag] || NET_FLAG_INFO['unknown'];
+      const actions = [];
+      if (n.risk !== 'ok') {
+        actions.push({ label: `Investigate destination`, cmd: `nslookup ${n.dest.split(':')[0].replace(/[\[\]]/g, '')} 2>/dev/null || echo "nslookup not available"` });
+        actions.push({ label: `Kill process (PID ${n.pid})`, cmd: `kill ${n.pid}` });
+      }
+      openDetail(
+        `${badge(n.risk)} <span style="margin-left:6px">${esc(n.dest)}</span>`,
+        `${esc(n.proc)} (PID ${esc(n.pid)}) · ${esc(n.flag)}`,
+        drawerSection('What this is', info.what) +
+        drawerSection('Why it matters', info.why) +
+        drawerSection('How to fix', info.fix) +
+        drawerActions(actions)
+      );
+    }
+
+    // ── Table click delegation ─────────────────────────────────────────────────────
+    function setupTableDelegation() {
+      document.getElementById('table-perms').addEventListener('click', e => {
+        const tr = e.target.closest('tr[data-i]');
+        if (!tr || !lastSnapshot) return;
+        const p = lastSnapshot.permissions[parseInt(tr.dataset.i, 10)];
+        if (p) showPermDetail(p);
+      });
+      document.getElementById('table-net').addEventListener('click', e => {
+        const tr = e.target.closest('tr[data-i]');
+        if (!tr || !lastSnapshot) return;
+        const n = lastSnapshot.network[parseInt(tr.dataset.i, 10)];
+        if (n) showNetDetail(n);
+      });
+      document.getElementById('table-procs').addEventListener('click', e => {
+        const tr = e.target.closest('tr[data-pid]');
+        if (!tr || !lastSnapshot) return;
+        const pid = tr.dataset.pid;
+        const p = lastSnapshot.processes.find(x => String(x.pid) === pid);
+        if (p) showProcDetail(p);
+      });
+      document.getElementById('alerts-panel').addEventListener('click', e => {
+        const row = e.target.closest('.alert-clickable');
+        if (!row || !lastSnapshot) return;
+        const { type, ref } = row.dataset;
+        if (type === 'perm') {
+          const p = lastSnapshot.permissions[parseInt(ref, 10)];
+          if (p) showPermDetail(p);
+        } else if (type === 'proc') {
+          const p = lastSnapshot.processes.find(x => String(x.pid) === ref);
+          if (p) showProcDetail(p);
+        } else if (type === 'net') {
+          const n = lastSnapshot.network[parseInt(ref, 10)];
+          if (n) showNetDetail(n);
+        }
+      });
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
+
     // ── Boot ───────────────────────────────────────────────────────────────────────
+    setupTableDelegation();
     initialCheck();
   </script>
 </body>

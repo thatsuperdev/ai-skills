@@ -15,7 +15,7 @@ const os    = require('os');
 const https = require('https');
 const { execSync } = require('child_process');
 
-const VERSION    = '1.0.0';
+const VERSION    = '1.0.1';
 const PORT       = parseInt(process.env.PORT || '4242', 10);
 const HOSTED_URL = process.env.AISENTRY_HOST || process.env.CLAUDE_MONITOR_HOST || '__HOSTED_URL__';
 const HOME       = os.homedir();
@@ -64,6 +64,14 @@ function banner() {
 function safeExec(cmd, ms = 5000) {
   try { return execSync(cmd, { encoding:'utf8', timeout:ms, stdio:['ignore','pipe','ignore'] }).trim(); }
   catch { return ''; }
+}
+
+function isAllowedOrigin(req) {
+  const o = req.headers.origin || '';
+  if (!o) return true;
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(o)) return true;
+  if (!HOSTED_URL.startsWith('__') && o === HOSTED_URL) return true;
+  return false;
 }
 
 // ── Sessions ──────────────────────────────────────────────────────────────────
@@ -413,6 +421,7 @@ http.createServer((req, res) => {
 
   // POST /stop — graceful shutdown
   if (url === '/stop' && req.method === 'POST') {
+    if (!isAllowedOrigin(req)) { res.writeHead(403); res.end(JSON.stringify({ ok:false, error:'origin not allowed' })); return; }
     res.setHeader('Content-Type','application/json');
     res.end(JSON.stringify({ ok:true }));
     log('ctrl', 'stop requested by browser', C.yellow);
@@ -422,6 +431,7 @@ http.createServer((req, res) => {
 
   // POST /scan — immediate scan push
   if (url === '/scan' && req.method === 'POST') {
+    if (!isAllowedOrigin(req)) { res.writeHead(403); res.end(JSON.stringify({ ok:false })); return; }
     res.setHeader('Content-Type','application/json');
     const d = collectAll(); logScan(d); push(d);
     res.end(JSON.stringify({ ok:true }));
@@ -437,6 +447,7 @@ http.createServer((req, res) => {
 
   // POST /config — update settings
   if (url === '/config' && req.method === 'POST') {
+    if (!isAllowedOrigin(req)) { res.writeHead(403); res.end(JSON.stringify({ ok:false })); return; }
     readBody(req).then(body => {
       if (typeof body.scanInterval === 'number' && body.scanInterval >= 2000 && body.scanInterval <= 300000) {
         scanInterval = body.scanInterval;
@@ -445,6 +456,30 @@ http.createServer((req, res) => {
       }
       res.setHeader('Content-Type','application/json');
       res.end(JSON.stringify({ ok:true, scanInterval }));
+    });
+    return;
+  }
+
+  // POST /kill — send SIGTERM to a specific AI agent process
+  if (url === '/kill' && req.method === 'POST') {
+    if (!isAllowedOrigin(req)) { res.writeHead(403); res.end(JSON.stringify({ ok:false, error:'origin not allowed' })); return; }
+    readBody(req).then(body => {
+      res.setHeader('Content-Type','application/json');
+      const pid = parseInt(body.pid, 10);
+      if (!Number.isInteger(pid) || pid < 2 || pid > 999999) {
+        res.writeHead(400); res.end(JSON.stringify({ ok:false, error:'invalid pid' })); return;
+      }
+      const cmdLine = safeExec(`ps -p ${pid} -o command= 2>/dev/null`);
+      if (!cmdLine || !matchesAgent(cmdLine)) {
+        res.writeHead(403); res.end(JSON.stringify({ ok:false, error:'not an AI process' })); return;
+      }
+      try {
+        process.kill(pid, 'SIGTERM');
+        log('ctrl', `sent SIGTERM to PID ${pid}`, C.yellow);
+        res.end(JSON.stringify({ ok:true, pid }));
+      } catch(e) {
+        res.writeHead(500); res.end(JSON.stringify({ ok:false, error:e.message }));
+      }
     });
     return;
   }
