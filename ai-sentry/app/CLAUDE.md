@@ -3,8 +3,7 @@
 Real-time browser dashboard that monitors every AI coding agent on the user's machine (Claude Code, Codex CLI, Gemini CLI, Aider, Cursor, GitHub Copilot). Data flows only from the local machine to the local browser — nothing through any external server.
 
 **Deployed site:** https://aisentry.netlify.app  
-**GitHub repo:** https://github.com/eternalsayed/ai-sentry  
-**Local dev dir:** `/Users/sayed/Code/claude-monitor`
+**GitHub repo:** https://github.com/thatsuperdev/ai-skills (folder ai-sentry/app)  
 
 ---
 

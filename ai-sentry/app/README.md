@@ -164,7 +164,7 @@ To use a custom domain, configure it in Netlify's domain settings, then update `
 - The hosted site is pure static HTML/CSS/JS — no server, no database, no accounts
 - Analytics slot included in HTML for self-hosters (empty by default — opt-in)
 - One outbound call: `GET /version.json` to check for agent updates
-- MIT licensed — [read every line](https://github.com/eternalsayed/ai-monitor)
+- MIT licensed — [read every line](https://github.com/thatsuperdev/ai-skills/tree/main/ai-sentry)
 
 ---
 
