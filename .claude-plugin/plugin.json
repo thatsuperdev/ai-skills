@@ -1,0 +1,8 @@
+{
+  "name": "ai-skills",
+  "description": "Agent skills by thatsuperdev: ai-sentry (audit AI coding agents on your machine) and assembly-video (satisfying Blender product build videos).",
+  "version": "0.1.0",
+  "author": { "name": "thatsuperdev" },
+  "repository": "https://github.com/thatsuperdev/ai-skills",
+  "license": "MIT"
+}

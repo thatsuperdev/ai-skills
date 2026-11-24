@@ -1,0 +1,66 @@
+Satisfying 3D build video prompt, adapted from a public "copy and use" Instagram carousel (https://www.instagram.com/p/Df7eIQTEeob/).
+Fill every [bracket] before use.
+
+<brief>
+Make "[title]", a hyper-realistic Blender video for X. A premium [object] made of [material] builds itself piece by piece, then comes alive with light, WITH MUSIC. Make it extremely satisfying. Work completely autonomously; nobody will answer questions.
+</brief>
+
+<idea>
+Build videos are satisfying to watch. Keep that format, but make every part [material] so the hidden parts stay visible: [inner parts, e.g. circuit board, springs, screws, gears].
+Everything is made by Claude from scratch: no downloaded models.
+</idea>
+
+<look>
+The body: [material] with polished bevelled edges, real refraction, reflections and caustics on the floor. [optional accents, e.g. polished metal screws, a badge plate]
+The visible insides: [each inner part and what it looks like]
+No real brand names; all text is made up.
+The studio: pick the background that makes [material] look stunning. Test at least 3 options with low-sample A/B stills and choose. The material must read as real, never as grey plastic.
+The alive moment: [e.g. a light wave travelling through the whole object]. This is the payoff.
+</look>
+
+<team>
+You are the director and lead. You own the shot list, timing, cameras, lighting, the final render and the report.
+Start exactly 3 helpers, each with its own brief and sub-folder:
+Helper A, hardware: every part of the [object], with real thicknesses and bevels.
+Helper B, look: materials, the studio and background tests, rim lighting and the alive moment. Keep render times sane.
+Helper C, sound and music: real sound effects and one royalty-free track.
+Review their work critically with renders. Send them back for fixes as needed.
+</team>
+
+<sound>
+Sound effects: real Pixabay sounds re-synced to your final timing: [e.g. clicks, snaps, taps, screws].
+Music: ONE instrumental track, no vocals, royalty-free and free on X (Pixabay Music or incompetech.com). [mood, e.g. clean, modern, rhythmic]
+Present from the very first frame, builds with each wave, a drop on the alive moment, ends cleanly with the video.
+The part sounds are the star. Duck the music under the busy waves.
+Mix to about -16 LUFS. Every URL and licence goes in CREDITS.txt.
+</sound>
+
+<video>
+A hook in the first second. Frame 0 must already look stunning: [e.g. the exploded parts hovering, light streaking through the edges]. No black start, no fade-in.
+The build: [the assembly order, step by step], with one macro hero shot of [key part]. Parts speed up, with overshoot and settle.
+Every landing is snappy and synced to its sound and the beat.
+Camera: cinematic macro work, rack focus, speed ramps, real depth of field. Every shot stays close.
+Payoff: the alive moment on the drop, then [the object in use], then a slow hero orbit held for about 2 s.
+Length: [25 to 35 s] at 60 fps, 1080x1350 (4:5).
+</video>
+
+<quality>
+Before final: render low-sample stills of every shot and critique them hard: weak start, boring shots, material that reads as plastic, pacing, the ending.
+After the final render, scan every frame for glitches: flicker, popping, denoiser boiling, parts passing through each other, camera hitches. Re-render and fix anything you find.
+</quality>
+
+<tech>
+Blender headless, Cycles for the final render. Only ONE full-quality render at a time. Downloads only from Pixabay, incompetech.com and Poly Haven.
+</tech>
+
+<deliver>
+The final mp4 (H.264, AAC 256k), a 12-frame contact sheet, CREDITS.txt, the build scripts, and REPORT.md: background chosen and why, what each helper built, where the drop lands, glitch scan results, anything imperfect.
+</deliver>
+
+<swap>
+[mechanical keyboard] + [glass] -> the video in slide 1
+[wristwatch] + [sapphire crystal] -> gears and springs visible
+[gaming console] + [clear acrylic] -> the board and fans on show
+[camera] + [frosted crystal] -> lens elements stacking in
+[sneaker] + [clear resin] -> every layer of the sole
+</swap>

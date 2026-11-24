@@ -1,0 +1,11 @@
+{
+  "name": "thatsuperdev-ai-skills",
+  "owner": { "name": "thatsuperdev" },
+  "plugins": [
+    {
+      "name": "ai-skills",
+      "source": "./",
+      "description": "ai-sentry and assembly-video agent skills"
+    }
+  ]
+}
