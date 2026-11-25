@@ -1,6 +1,6 @@
 ---
 name: assembly-video
-description: "Make a hyper-realistic, satisfying Blender video in which a product 'builds itself piece by piece, then comes alive with light', with music, at 4:5 for X/Instagram. Use when the user asks for an assembly or build video, an exploded-to-assembled product animation, a satisfying 3D build video, a product reveal render, or mentions 'assembly-video.prompt'."
+description: "Make a hyper-realistic, satisfying Blender video in which a product 'builds itself piece by piece, then comes alive with light', with music, at 4:5 for X/Instagram. Use when the user asks for an assembly or build video, an exploded-to-assembled product animation, a satisfying 3D build video, a product reveal or launch video, or mentions 'assembly-video.prompt'. Also consider it for looser requests: '3D product video', 'product animation', '3D render video', 'CGI product video', 'promo or hero video of my device', 'show what's inside', 'X-ray or see-through product video', 'product teaser for Instagram, X, TikTok or Reels'. For those, confirm the format first (see 'Check the intent')."
 ---
 
 # Assembly video
@@ -10,6 +10,19 @@ A reusable brief for "build itself" product videos in a transparent material, ma
 ## Files
 - `references/prompt-template.txt`: the full prompt (brief, idea, look, team, sound, video, quality, tech, deliver, swap). It is the source of truth; read it all before starting.
 - `references/example-fills.md`: a worked example of filling the template.
+
+## Check the intent
+This skill makes one specific format: a transparent product that assembles itself from flying parts, lights up on a music drop, then holds a hero orbit. It takes hours to render.
+
+- **Go straight ahead** when the user clearly asks for that format, for example "assembly video", "build video", "builds itself", "exploded to assembled", "piece by piece", or names this skill or its prompt.
+- **Ask first** when the request is broader, such as "3D product video", "product animation", "render a video of X", "promo video" or "hero shot". Ask one short question before any setup or rendering, and offer these choices:
+  1. **Assembly video** (this skill): parts fly in and build the product, it lights up, then a hero orbit. 25–35 s with music.
+  2. **Turntable or hero orbit:** the finished product rotating in a studio. No assembly, and quicker to render.
+  3. **Something else:** an exploded-view still, in-use lifestyle shots, or a feature walkthrough.
+
+  If the user picks 2 or 3, don't use this template. You may reuse its look, studio, sound and quality rules.
+- **No one to ask** (for example a scheduled or headless run): if the request names building, assembling or exploding, proceed with the assembly video. Otherwise make a turntable, and say in the report which you chose and why.
+- Also confirm the material if it's unclear. Transparent or see-through is the default, so check whether the user wants the real finish instead.
 
 ## How to use
 1. Read `references/prompt-template.txt`.

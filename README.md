@@ -32,7 +32,7 @@ Run `git pull` in `~/ai-skills` to update every agent at once.
 
 ## Use
 - *"Is any plugin on my machine doing something fishy?"* runs `ai-sentry`'s one-shot audit (`ai-sentry/scripts/audit.sh`).
-- *"Make an assembly video of a mechanical keyboard in glass"* starts `assembly-video`. It needs Blender, and the agent asks before installing it.
+- *"Make an assembly video of a mechanical keyboard in glass"* starts `assembly-video`. Looser requests, such as *"make a 3D product video of my device"*, trigger it too, but the agent first asks whether you want the assembly format or a simpler turntable. It needs Blender, and the agent asks before installing it.
 
 ## Notes
 - `ai-sentry` is read-only. It binds to 127.0.0.1 and never reads conversation content, API keys or `.env` files. It moved here from `thatsuperdev/ai-sentry` with its full git history. The app lives in `ai-sentry/app/`; to deploy the dashboard on Netlify, set the base directory to `ai-sentry/app`.
